@@ -109,9 +109,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     cursor = page?.pageInfo?.endCursor || null;
   }
 
-  const dealers = nodes
-    .map(normalizeDealer)
-    .filter(Boolean);
+  const dealers: NonNullable<ReturnType<typeof normalizeDealer>>[] = [];
+  for (const node of nodes) {
+    const dealer = normalizeDealer(node);
+    if (dealer && dealer.status === "Approved") {
+      dealers.push(dealer);
+    }
+  }
 
   return json({ dealers, error: "" });
 };
