@@ -186,6 +186,43 @@
     font-size: 13px;
   }
 
+  .dl-suggestion-tag {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #fff0e8;
+    color: #ff5f1f;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .dl-search-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .dl-btn {
+    height: 42px;
+    padding: 0 20px;
+    border: 0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .dl-btn-search {
+    background: #1f6fd6;
+    color: #ffffff;
+  }
+
+  .dl-btn-reset {
+    background: #6b7280;
+    color: #ffffff;
+  }
+
   .dl-results {
     display: grid;
     grid-template-columns: 367px minmax(0, 1fr);
@@ -267,9 +304,24 @@
     font-weight: 800;
   }
 
-  .dl-card .dl-distance {
-    color: #1f4f82;
+  .dl-meta-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 3px 11px;
+    border-radius: 999px;
+    font-size: 12px;
     font-weight: 800;
+    vertical-align: middle;
+  }
+
+  .dl-rank-badge {
+    background: #e7f1ff;
+    color: #1d5fb8;
+  }
+
+  .dl-distance-badge {
+    background: #eef0f3;
+    color: #4b5563;
   }
 
   .dl-status {
@@ -360,9 +412,13 @@
   <main class="dl-page" data-dealer-content aria-label="Dealer locator">
     <section class="dl-controls" aria-label="Search filters">
       <div class="dl-field">
-        <label for="dealer-locator-address">Search address</label>
-        <input class="dl-input" id="dealer-locator-address" type="text" placeholder="Enter address, city, or postal code" autocomplete="off" data-address-search>
+        <label for="dealer-locator-address">Search address or dealer</label>
+        <input class="dl-input" id="dealer-locator-address" type="text" placeholder="Type a dealer or address" autocomplete="off" data-address-search>
         <div class="dl-suggestions" data-address-suggestions></div>
+        <div class="dl-search-actions">
+          <button type="button" class="dl-btn dl-btn-search" data-search-button>Search</button>
+          <button type="button" class="dl-btn dl-btn-reset" data-reset-button>Reset</button>
+        </div>
       </div>
       <div class="dl-field">
         <label for="dealer-locator-dealer">Closest company dealer</label>
@@ -394,6 +450,8 @@
     const mapCanvas = root.querySelector("[data-dealer-map]");
     const closestDealerInput = root.querySelector("[data-closest-dealer]");
     const dealerListEl = root.querySelector("[data-dealer-list]");
+    const searchButton = root.querySelector("[data-search-button]");
+    const resetButton = root.querySelector("[data-reset-button]");
     const storageKey = "dealerLocatorUnlocked";
     const GEOAPIFY_API_KEY = "a335b186e0ae4db1821dae89eb83f53f";
     const GEOAPIFY_COUNTRY = "ca";
@@ -414,6 +472,7 @@
     let allDealerMarkers = [];
     let selectedDealerMarker = null;
     let dealerPoints = [];
+    let baseDealerPoints = [];
     let currentDealer = null;
     let hasUserSelectedDealer = false;
 
@@ -533,7 +592,7 @@
         return;
       }
 
-      dealerPoints.forEach((dealer) => {
+      dealerPoints.forEach((dealer, index) => {
         const card = document.createElement("button");
         const dealerStatus = dealer.status || "Unknown";
         const dealerStatusClass =
@@ -546,10 +605,12 @@
           dealer.locationName && dealer.locationName !== dealer.name
             ? `<p>${escapeHtml(dealer.locationName)}</p>`
             : "";
-        const distanceLine =
-          Number.isFinite(dealer.distanceKm)
-            ? `<p class="dl-distance">Distance: ${Math.round(dealer.distanceKm)} km</p>`
-            : "";
+        const rankBadge = Number.isFinite(dealer.distanceKm)
+          ? `<span class="dl-meta-badge dl-rank-badge">#${index + 1} nearest</span>`
+          : "";
+        const distanceBadge = Number.isFinite(dealer.distanceKm)
+          ? `<span class="dl-meta-badge dl-distance-badge">${Math.round(dealer.distanceKm)} km</span>`
+          : "";
 
         card.className = "dl-card";
         card.type = "button";
@@ -557,23 +618,24 @@
         card.innerHTML = `
           <div class="dl-pin-mini" aria-hidden="true"></div>
           <div>
-            <h2>${escapeHtml(dealer.name)}</h2>
+            <h2>${escapeHtml(dealer.name)}${rankBadge}${distanceBadge}</h2>
             <span class="dl-status${dealerStatusClass}">${escapeHtml(dealerStatus)}</span>
             <p>${escapeHtml(dealer.address || "")}</p>
             ${locationName}
-            ${distanceLine}
             <p class="dl-dealer-radius">Radius: ${getDealerRadius(dealer.radius)} km</p>
           </div>
         `;
-        card.addEventListener("click", () => {
-          hasUserSelectedDealer = true;
-          updateDealerCard(dealer);
-          renderDealerOnMap(dealer, { focusSelected: true });
-        });
+        card.addEventListener("click", () => selectDealer(dealer));
         dealerListEl.appendChild(card);
       });
 
       updateDealerCard(currentDealer);
+    }
+
+    function selectDealer(dealer) {
+      hasUserSelectedDealer = true;
+      updateDealerCard(dealer);
+      renderDealerOnMap(dealer, { focusSelected: true });
     }
 
     async function fetchJsonSafe(url, timeoutMs = 8000) {
@@ -836,9 +898,11 @@
         );
 
         dealerPoints = addMarkerOffsets(points.filter(Boolean));
+        baseDealerPoints = dealerPoints;
       } catch (error) {
         endpointError = "Dealer endpoint could not be reached.";
         dealerPoints = [];
+        baseDealerPoints = [];
       }
 
       updateDealerCard(dealerPoints[0] || null);
@@ -1013,10 +1077,9 @@
         dealerMarker.openPopup();
       }
 
-      if (searchMarker || !focusSelected) {
+      if (focusSelected) {
         const bounds = dealerRadius.getBounds();
         if (searchMarker) bounds.extend(searchMarker.getLatLng());
-        allDealerMarkers.forEach((marker) => bounds.extend(marker.getLatLng()));
         map.fitBounds(bounds, { padding: [36, 36] });
       } else {
         const bounds = dealerRadius.getBounds();
@@ -1035,7 +1098,6 @@
       hasUserSelectedDealer = true;
       updateDealerCard(getClosestDealer(result));
       renderDealerList();
-      renderDealerOnMap(currentDealer, { focusSelected: true });
 
       if (searchMarker) {
         map.removeLayer(searchMarker);
@@ -1048,18 +1110,14 @@
         .addTo(map)
         .bindPopup(`<strong>Searched address</strong><br>${result.label}`);
 
-      searchMarker.openPopup();
-
-      if (!currentDealer || !dealerRadius) {
+      if (!currentDealer) {
         map.setView([result.lat, result.lng], 8);
+        searchMarker.openPopup();
         return;
       }
 
-      const bounds = dealerRadius.getBounds();
-      bounds.extend(searchMarker.getLatLng());
-      allDealerMarkers.forEach((marker) => bounds.extend(marker.getLatLng()));
-      map.fitBounds(bounds, { padding: [36, 36] });
-
+      renderDealerOnMap(currentDealer, { focusSelected: true });
+      searchMarker.openPopup();
       dealerRadius.bringToFront();
       dealerMarker.openPopup();
     }
@@ -1083,6 +1141,19 @@
       return labels;
     }
 
+    function findDealerMatches(query, limit = 5) {
+      const needle = query.trim().toLowerCase();
+      if (!needle) return [];
+
+      return baseDealerPoints
+        .filter((dealer) =>
+          [dealer.name, dealer.locationName, dealer.address]
+            .filter(Boolean)
+            .some((value) => value.toLowerCase().includes(needle))
+        )
+        .slice(0, limit);
+    }
+
     function splitSuggestionLabel(label) {
       const parts = String(label || "")
         .split(",")
@@ -1096,8 +1167,25 @@
       };
     }
 
-    function renderSuggestionItems(labels) {
+    function renderSuggestionItems(dealerMatches, labels) {
       suggestionsPanel.innerHTML = "";
+
+      dealerMatches.forEach((dealer) => {
+        const button = document.createElement("button");
+        const title = document.createElement("strong");
+        const detail = document.createElement("span");
+        const tag = document.createElement("span");
+
+        button.className = "dl-suggestion";
+        button.type = "button";
+        button.dataset.dealerId = dealer.id;
+        title.textContent = getDealerDisplayName(dealer);
+        detail.textContent = dealer.address || "";
+        tag.className = "dl-suggestion-tag";
+        tag.textContent = "Dealer";
+        button.append(title, detail, tag);
+        suggestionsPanel.appendChild(button);
+      });
 
       labels.map(splitSuggestionLabel).forEach((item) => {
         const button = document.createElement("button");
@@ -1113,7 +1201,7 @@
         suggestionsPanel.appendChild(button);
       });
 
-      suggestionsPanel.classList.toggle("is-visible", labels.length > 0);
+      suggestionsPanel.classList.toggle("is-visible", dealerMatches.length > 0 || labels.length > 0);
     }
 
     async function renderSuggestions(query) {
@@ -1126,11 +1214,12 @@
       }
 
       const token = ++lastAddressSuggestToken;
+      const dealerMatches = findDealerMatches(cleanedQuery);
       const labels = await fetchAddressSuggestions(cleanedQuery);
 
       if (token !== lastAddressSuggestToken) return;
 
-      renderSuggestionItems(labels);
+      renderSuggestionItems(dealerMatches, labels);
     }
 
     addressInput.addEventListener("input", () => {
@@ -1141,14 +1230,24 @@
     });
 
     suggestionsPanel.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-address-value]");
+      const button = event.target.closest("[data-dealer-id], [data-address-value]");
 
       if (!button) {
         return;
       }
 
-      addressInput.value = button.dataset.addressValue;
       suggestionsPanel.classList.remove("is-visible");
+
+      if (button.dataset.dealerId) {
+        const dealer = baseDealerPoints.find((point) => point.id === button.dataset.dealerId);
+        if (!dealer) return;
+
+        addressInput.value = getDealerDisplayName(dealer);
+        selectDealer(dealer);
+        return;
+      }
+
+      addressInput.value = button.dataset.addressValue;
       showSearchMarker(addressInput.value);
     });
 
@@ -1160,6 +1259,32 @@
       showSearchMarker(addressInput.value);
     });
 
+    searchButton.addEventListener("click", () => {
+      suggestionsPanel.classList.remove("is-visible");
+      if (addressInput.value.trim()) {
+        showSearchMarker(addressInput.value);
+      }
+    });
+
+    resetButton.addEventListener("click", () => {
+      addressInput.value = "";
+      suggestionsPanel.classList.remove("is-visible");
+      suggestionsPanel.innerHTML = "";
+
+      if (searchMarker) {
+        map.removeLayer(searchMarker);
+        searchMarker = null;
+      }
+
+      hasUserSelectedDealer = false;
+      dealerPoints = baseDealerPoints;
+      renderDealerList();
+      updateDealerCard(dealerPoints[0] || null);
+
+      if (map && dealerPoints.length) {
+        renderDealerOnMap(dealerPoints[0], { focusSelected: false });
+      }
+    });
 
     document.addEventListener("click", (event) => {
       if (!root.contains(event.target)) {
