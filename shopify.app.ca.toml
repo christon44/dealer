@@ -2,7 +2,7 @@
 
 client_id = "12bcf1fa50c7e637268da013507fe773"
 name = "Dealers-Internal Management"
-application_url = "https://example.com"
+application_url = "https://dealers.apps.tmgindustrial.com"
 embedded = true
 
 [build]
@@ -22,4 +22,4 @@ prefix = "apps"
 subpath = "dealer-locator"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://dealers.apps.tmgindustrial.com/api/auth" ]
