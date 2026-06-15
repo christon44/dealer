@@ -399,17 +399,8 @@
     const GEOAPIFY_COUNTRY = "ca";
     const DEALERS_ENDPOINT = "/apps/dealer-locator/companies";
     const FALLBACK_RADIUS_KM = 75;
-    const FALLBACK_DEALER = {
-      id: "fallback-tmg",
-      name: "TMG",
-      address: "Ontario Ave, Hamilton, Ontario, L8N 2X1, Canada",
-      locationName: "Ontario Ave",
-      phone: "",
-      radius: FALLBACK_RADIUS_KM,
-      status: "Approved",
-      lat: 43.2557,
-      lng: -79.8711,
-    };
+    const DEFAULT_MAP_CENTER = { lat: 56.1304, lng: -106.3468 };
+    const DEFAULT_MAP_ZOOM = 4;
     const ADDRESS_SUGGEST_LIMIT = 5;
     const ADDRESS_SUGGEST_DEBOUNCE_MS = 250;
     const ADDRESS_CACHE_TTL = 60 * 1000;
@@ -423,7 +414,7 @@
     let allDealerMarkers = [];
     let selectedDealerMarker = null;
     let dealerPoints = [];
-    let currentDealer = FALLBACK_DEALER;
+    let currentDealer = null;
     let hasUserSelectedDealer = false;
 
     function unlock() {
@@ -500,7 +491,15 @@
     }
 
     function updateDealerCard(dealer) {
-      currentDealer = dealer || FALLBACK_DEALER;
+      currentDealer = dealer || null;
+
+      if (!currentDealer) {
+        closestDealerInput.value = "No data";
+        dealerListEl
+          .querySelectorAll("[data-dealer-id]")
+          .forEach((card) => card.classList.remove("is-active"));
+        return;
+      }
 
       closestDealerInput.value = getDealerDisplayName(currentDealer);
       dealerListEl
@@ -525,8 +524,8 @@
           <div class="dl-card">
             <div class="dl-pin-mini" aria-hidden="true"></div>
             <div>
-              <h2>No dealers found</h2>
-              <p>No company locations match this filter.</p>
+              <h2>No data</h2>
+              <p>No approved company dealers are available right now.</p>
             </div>
           </div>
         `
@@ -842,18 +841,18 @@
         dealerPoints = [];
       }
 
-      if (!dealerPoints.length) {
-        dealerPoints = [FALLBACK_DEALER];
-      }
-
-      updateDealerCard(dealerPoints[0]);
+      updateDealerCard(dealerPoints[0] || null);
       renderDealerList();
 
       const status = dealerListEl.querySelector("[data-list-status]");
       if (status) {
-        status.textContent = endpointError
-          ? `${endpointError} Showing ${dealerPoints.length} dealer.`
-          : `${dealerPoints.length} company dealer${dealerPoints.length === 1 ? "" : "s"} loaded.`;
+        if (!dealerPoints.length) {
+          status.textContent = endpointError
+            ? `${endpointError} No data.`
+            : "No data.";
+        } else {
+          status.textContent = `${dealerPoints.length} company dealer${dealerPoints.length === 1 ? "" : "s"} loaded.`;
+        }
       }
 
       if (dealerPoints.length > 1 && !hasUserSelectedDealer) {
@@ -864,7 +863,8 @@
     }
 
     function getClosestDealer(searchPoint) {
-      if (!searchPoint || !dealerPoints.length) return dealerPoints[0] || FALLBACK_DEALER;
+      if (!dealerPoints.length) return null;
+      if (!searchPoint) return dealerPoints[0];
 
       return [...dealerPoints]
         .map((dealer) => ({
@@ -943,11 +943,13 @@
         return;
       }
 
-      const dealerLatLng = [currentDealer.lat, currentDealer.lng];
+      const initialView = currentDealer
+        ? [[currentDealer.lat, currentDealer.lng], 8]
+        : [[DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng], DEFAULT_MAP_ZOOM];
       map = L.map(mapCanvas, {
         zoomControl: true,
         scrollWheelZoom: false,
-      }).setView(dealerLatLng, 8);
+      }).setView(...initialView);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "&copy; OpenStreetMap contributors",
@@ -1047,6 +1049,11 @@
         .bindPopup(`<strong>Searched address</strong><br>${result.label}`);
 
       searchMarker.openPopup();
+
+      if (!currentDealer || !dealerRadius) {
+        map.setView([result.lat, result.lng], 8);
+        return;
+      }
 
       const bounds = dealerRadius.getBounds();
       bounds.extend(searchMarker.getLatLng());
