@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
@@ -104,7 +104,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function DealerMap() {
   const { dealers, error } = useLoaderData() as LoaderData;
-  const [statusFilter, setStatusFilter] = useState<"all" | "approved">("all");
 
   const approvedCount = useMemo(
     () => dealers.filter((dealer) => dealer.status === "Approved").length,
@@ -116,28 +115,17 @@ export default function DealerMap() {
       <s-section>
         <s-banner heading="Welcome to the Internal Dealer Map" tone="info">
           <s-paragraph>
-            This app powers the dealer locator on your storefront, which lets
-            customers search for the nearest approved dealer. Use the setting
-            below to control which companies appear there.
+            This app powers the dealer locator on your storefront, which
+            shows customers only your approved company dealers and lets them
+            search for the nearest one.
           </s-paragraph>
         </s-banner>
       </s-section>
       <s-section heading="Settings">
         {error ? <s-paragraph>{error}</s-paragraph> : null}
         <s-stack direction="inline" gap="base" alignItems="end">
-          <s-select
-            label="Show companies"
-            value={statusFilter}
-            onChange={(event) => {
-              const value = (event.target as HTMLSelectElement).value;
-              setStatusFilter(value === "approved" ? "approved" : "all");
-            }}
-          >
-            <s-option value="all">All companies</s-option>
-            <s-option value="approved">Approved only</s-option>
-          </s-select>
-          <s-badge tone="success">{approvedCount} approved</s-badge>
-          <s-badge tone="neutral">{dealers.length} total</s-badge>
+          <s-badge tone="success">{approvedCount} approved dealers shown on storefront</s-badge>
+          <s-badge tone="neutral">{dealers.length} total companies</s-badge>
         </s-stack>
       </s-section>
     </s-page>
