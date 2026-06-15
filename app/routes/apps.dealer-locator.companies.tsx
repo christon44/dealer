@@ -16,11 +16,13 @@ type CompanyLocationNode = {
   id: string;
   name: string;
   phone: string | null;
+  roleAssignments: {
+    nodes: Array<{ id: string }>;
+  };
   company: {
     id: string;
     name: string;
     externalId: string | null;
-    mainContact: { id: string } | null;
   };
   metafield: { value: string } | null;
   shippingAddress: Address | null;
@@ -64,6 +66,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               id
               name
               phone
+              roleAssignments(first: 1) {
+                nodes { id }
+              }
               metafield(namespace: "custom", key: "radius") {
                 value
               }
@@ -71,9 +76,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                 id
                 name
                 externalId
-                mainContact {
-                  id
-                }
               }
               shippingAddress {
                 address1
@@ -137,7 +139,7 @@ function normalizeDealer(node: CompanyLocationNode) {
     radiusValue === null || radiusValue === undefined || radiusValue === ""
       ? DEFAULT_RADIUS_KM
       : Number(radiusValue);
-  const status = node.company.mainContact ? "Approved" : "Not approved";
+  const status = node.roleAssignments.nodes.length > 0 ? "Approved" : "Not approved";
 
   if (!addressParts) {
     return null;
