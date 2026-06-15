@@ -27,10 +27,14 @@ type CompanyLocationNode = {
   id: string;
   name: string;
   phone: string | null;
-  roleAssignments: {
-    nodes: Array<{ id: string }>;
+  company: {
+    name: string;
+    locations: {
+      nodes: Array<{
+        roleAssignments: { nodes: Array<{ id: string }> };
+      }>;
+    };
   };
-  company: { name: string };
   shippingAddress: Address | null;
   billingAddress: Address | null;
 };
@@ -59,10 +63,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             id
             name
             phone
-            roleAssignments(first: 1) {
-              nodes { id }
+            company {
+              name
+              locations(first: 50) {
+                nodes {
+                  roleAssignments(first: 1) {
+                    nodes { id }
+                  }
+                }
+              }
             }
-            company { name }
             shippingAddress {
               address1
               address2
@@ -134,7 +144,9 @@ export default function DealerMap() {
 
 function normalizeDealer(node: CompanyLocationNode): Dealer | null {
   const address = node.shippingAddress || node.billingAddress;
-  const isApprovedForOrdering = node.roleAssignments.nodes.length > 0;
+  const isApprovedForOrdering = node.company.locations.nodes.some(
+    (location) => location.roleAssignments.nodes.length > 0,
+  );
   const addressParts = [
     address?.address1,
     address?.address2,
