@@ -1,0 +1,11 @@
+{
+  "sections": {
+    "dealer_locator": {
+      "type": "dealer-locator",
+      "settings": {}
+    }
+  },
+  "order": [
+    "dealer_locator"
+  ]
+}

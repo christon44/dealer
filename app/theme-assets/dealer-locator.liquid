@@ -1,0 +1,1167 @@
+<style>
+  .dealer-locator-section {
+    background: #eeeeee;
+    color: #2c2f34;
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    padding: 22px;
+  }
+
+  .dealer-locator-section * {
+    box-sizing: border-box;
+  }
+
+  .dealer-locator-section button,
+  .dealer-locator-section input {
+    font: inherit;
+  }
+
+  .dl-login {
+    width: min(100%, 430px);
+    margin: 8vh auto;
+    background: #ffffff;
+    border: 1px solid #d6d6d6;
+    border-radius: 8px;
+    box-shadow: 0 18px 55px rgba(28, 31, 36, 0.12);
+    padding: 32px;
+  }
+
+  .dl-login h1 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    line-height: 1.15;
+  }
+
+  .dl-login p {
+    margin: 0;
+    color: #696f78;
+    line-height: 1.55;
+  }
+
+  .dl-password-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .dl-password-form label {
+    display: grid;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .dl-password-form input,
+  .dl-input {
+    width: 100%;
+    border: 1px solid #a8adb5;
+    border-radius: 8px;
+    color: #2c2f34;
+  }
+
+  .dl-password-form input {
+    padding: 13px 14px;
+  }
+
+  .dl-password-form input:focus,
+  .dl-input:focus {
+    border-color: #ff6b2b;
+    box-shadow: 0 0 0 4px rgba(255, 107, 43, 0.16);
+    outline: none;
+  }
+
+  .dl-password-form button {
+    min-height: 46px;
+    border: 0;
+    border-radius: 8px;
+    background: #ff5f1f;
+    color: #ffffff;
+    cursor: pointer;
+    font-weight: 800;
+  }
+
+  .dl-error {
+    min-height: 22px;
+    color: #b42318;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .dl-page {
+    display: none;
+    width: min(100%, 1090px);
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #d8d8d8;
+    border-radius: 12px;
+    box-shadow: 0 10px 36px rgba(36, 39, 44, 0.08);
+    padding: 16px 18px 20px;
+  }
+
+  .dl-page.is-visible {
+    display: block;
+  }
+
+  .dl-controls {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.05fr) minmax(260px, 1.05fr);
+    gap: 16px;
+    align-items: end;
+    margin-bottom: 20px;
+  }
+
+  .dl-field {
+    position: relative;
+    display: grid;
+    gap: 9px;
+  }
+
+  .dl-field label {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .dl-input {
+    height: 52px;
+    background: #ffffff;
+    padding: 0 14px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .dl-input::placeholder {
+    color: #7b7f86;
+    font-weight: 500;
+  }
+
+  .dl-suggestions {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: none;
+    overflow: hidden;
+    border: 1px solid #d7dbe2;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 12px 30px rgba(28, 31, 36, 0.16);
+  }
+
+  .dl-suggestions.is-visible {
+    display: block;
+  }
+
+  .dl-suggestion {
+    width: 100%;
+    display: grid;
+    gap: 2px;
+    border: 0;
+    border-bottom: 1px solid #eef0f3;
+    background: #ffffff;
+    color: #2c2f34;
+    cursor: pointer;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .dl-suggestion:last-child {
+    border-bottom: 0;
+  }
+
+  .dl-suggestion:hover,
+  .dl-suggestion:focus {
+    background: #fff6f1;
+    outline: none;
+  }
+
+  .dl-suggestion strong {
+    color: #2c2f34;
+    font-size: 14px;
+  }
+
+  .dl-suggestion span {
+    color: #686f7a;
+    font-size: 13px;
+  }
+
+  .dl-results {
+    display: grid;
+    grid-template-columns: 367px minmax(0, 1fr);
+    gap: 34px;
+  }
+
+  .dl-card {
+    min-height: 173px;
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 24px;
+    background: #fff6f1;
+    border-bottom: 1px solid #ece3dd;
+    padding: 24px 14px 22px;
+  }
+
+  .dl-dealer-list {
+    max-height: 524px;
+    overflow: auto;
+    background: #fff6f1;
+  }
+
+  .dl-list-status {
+    padding: 10px 14px;
+    border-bottom: 1px solid #ece3dd;
+    background: #ffffff;
+    color: #686f7a;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .dl-dealer-list .dl-card {
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid #ece3dd;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .dl-dealer-list .dl-card.is-active {
+    outline: 2px solid #ff671d;
+    outline-offset: -2px;
+  }
+
+  .dl-pin-mini {
+    position: relative;
+    width: 23px;
+    height: 29px;
+    margin-top: 1px;
+    background: #ff5f1f;
+    clip-path: polygon(50% 100%, 4% 28%, 14% 0, 86% 0, 96% 28%);
+  }
+
+  .dl-pin-mini::after {
+    position: absolute;
+    top: 8px;
+    left: 7px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #ffffff;
+    content: "";
+  }
+
+  .dl-card h2 {
+    margin: 0 0 12px;
+    color: #ff5f1f;
+    font-size: 20px;
+  }
+
+  .dl-card p {
+    margin: 0 0 8px;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .dl-card .dl-dealer-radius {
+    color: #9f3308;
+    font-weight: 800;
+  }
+
+  .dl-card .dl-distance {
+    color: #1f4f82;
+    font-weight: 800;
+  }
+
+  .dl-status {
+    color: #4b5563;
+    font-weight: 800;
+  }
+
+  .dl-status.is-approved {
+    color: #087443;
+  }
+
+  .dl-status.is-not-approved {
+    color: #8a3a00;
+  }
+
+  .dl-map {
+    position: relative;
+    height: 524px;
+    min-height: 524px;
+    overflow: hidden;
+    border: 1px solid #cfd8ce;
+    border-radius: 9px;
+    background: #dce9d1;
+  }
+
+  .dl-map-canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  .dl-map .leaflet-popup-content-wrapper {
+    border-radius: 12px;
+  }
+
+  .dl-map .leaflet-popup-content {
+    margin: 12px 16px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 900px) {
+    .dealer-locator-section {
+      padding: 14px;
+    }
+
+    .dl-page {
+      padding: 14px;
+    }
+
+    .dl-controls,
+    .dl-results {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .dl-card {
+      min-height: auto;
+    }
+
+    .dl-map {
+      min-height: 420px;
+    }
+  }
+</style>
+
+<section class="dealer-locator-section">
+  <div class="dl-login" data-dealer-login>
+    <h1>Protected Page</h1>
+    <p>Enter the password to view the dealer locator.</p>
+    <form class="dl-password-form" data-dealer-form>
+      <label>
+        Password
+        <input type="password" autocomplete="current-password" data-dealer-password required>
+      </label>
+      <button type="submit">Unlock</button>
+      <div class="dl-error" data-dealer-error role="alert"></div>
+    </form>
+  </div>
+
+  <main class="dl-page" data-dealer-content aria-label="Dealer locator">
+    <section class="dl-controls" aria-label="Search filters">
+      <div class="dl-field">
+        <label for="dealer-locator-address">Search address</label>
+        <input class="dl-input" id="dealer-locator-address" type="text" placeholder="Enter address, city, or postal code" autocomplete="off" data-address-search>
+        <div class="dl-suggestions" data-address-suggestions></div>
+      </div>
+      <div class="dl-field">
+        <label for="dealer-locator-dealer">Closest company dealer</label>
+        <input class="dl-input" id="dealer-locator-dealer" type="text" value="Loading dealers..." data-closest-dealer readonly>
+      </div>
+    </section>
+
+    <section class="dl-results">
+      <aside class="dl-dealer-list" data-dealer-list aria-label="Company dealers"></aside>
+
+      <section class="dl-map" aria-label="OpenStreetMap showing dealer radius and searched address">
+        <div class="dl-map-canvas" data-dealer-map></div>
+      </section>
+    </section>
+  </main>
+</section>
+
+<script>
+  (() => {
+    const root = document.currentScript.previousElementSibling;
+    const password = "2026Year";
+    const form = root.querySelector("[data-dealer-form]");
+    const input = root.querySelector("[data-dealer-password]");
+    const login = root.querySelector("[data-dealer-login]");
+    const content = root.querySelector("[data-dealer-content]");
+    const error = root.querySelector("[data-dealer-error]");
+    const addressInput = root.querySelector("[data-address-search]");
+    const suggestionsPanel = root.querySelector("[data-address-suggestions]");
+    const mapCanvas = root.querySelector("[data-dealer-map]");
+    const closestDealerInput = root.querySelector("[data-closest-dealer]");
+    const dealerListEl = root.querySelector("[data-dealer-list]");
+    const storageKey = "dealerLocatorUnlocked";
+    const GEOAPIFY_API_KEY = "a335b186e0ae4db1821dae89eb83f53f";
+    const GEOAPIFY_COUNTRY = "ca";
+    const DEALERS_ENDPOINT = "/apps/dealer-locator/companies";
+    const FALLBACK_RADIUS_KM = 75;
+    const FALLBACK_DEALER = {
+      id: "fallback-tmg",
+      name: "TMG",
+      address: "Ontario Ave, Hamilton, Ontario, L8N 2X1, Canada",
+      locationName: "Ontario Ave",
+      phone: "",
+      radius: FALLBACK_RADIUS_KM,
+      status: "Approved",
+      lat: 43.2557,
+      lng: -79.8711,
+    };
+    const ADDRESS_SUGGEST_LIMIT = 5;
+    const ADDRESS_SUGGEST_DEBOUNCE_MS = 250;
+    const ADDRESS_CACHE_TTL = 60 * 1000;
+    const addressSuggestCache = new Map();
+    let addressSuggestDebounce = null;
+    let lastAddressSuggestToken = 0;
+    let map = null;
+    let dealerMarker = null;
+    let dealerRadius = null;
+    let searchMarker = null;
+    let allDealerMarkers = [];
+    let selectedDealerMarker = null;
+    let dealerPoints = [];
+    let currentDealer = FALLBACK_DEALER;
+    let hasUserSelectedDealer = false;
+
+    function unlock() {
+      login.style.display = "none";
+      content.classList.add("is-visible");
+      sessionStorage.setItem(storageKey, "true");
+      setTimeout(initDealerMap, 60);
+    }
+
+    if (sessionStorage.getItem(storageKey) === "true") {
+      unlock();
+    }
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      if (input.value === password) {
+        unlock();
+        return;
+      }
+
+      error.textContent = "Incorrect password.";
+      input.select();
+    });
+
+    function enhanceGeocodeQuery(query) {
+      const value = String(query || "").trim();
+      if (!value) return value;
+      if (/\bcanada\b/i.test(value)) return value;
+      return `${value}, Canada`;
+    }
+
+    function isCanadaLabel(label) {
+      return /\bcanada\b/i.test(String(label || ""));
+    }
+
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function getDistanceKm(lat1, lng1, lat2, lng2) {
+      const earthRadiusKm = 6371;
+      const latitudeDistance = ((lat2 - lat1) * Math.PI) / 180;
+      const longitudeDistance = ((lng2 - lng1) * Math.PI) / 180;
+      const a =
+        Math.sin(latitudeDistance / 2) ** 2 +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(longitudeDistance / 2) ** 2;
+
+      return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function getDealerRadius(value) {
+      if (value === null || value === undefined || value === "") {
+        return FALLBACK_RADIUS_KM;
+      }
+
+      const radius = Number(value);
+      return Number.isFinite(radius) ? radius : FALLBACK_RADIUS_KM;
+    }
+
+    function getDealerDisplayName(dealer) {
+      if (!dealer) return "";
+      if (dealer.locationName && dealer.locationName !== dealer.name) {
+        return `${dealer.name} - ${dealer.locationName}`;
+      }
+
+      return dealer.name;
+    }
+
+    function updateDealerCard(dealer) {
+      currentDealer = dealer || FALLBACK_DEALER;
+
+      closestDealerInput.value = getDealerDisplayName(currentDealer);
+      dealerListEl
+        .querySelectorAll("[data-dealer-id]")
+        .forEach((card) => {
+          card.classList.toggle("is-active", card.dataset.dealerId === currentDealer.id);
+        });
+    }
+
+    function renderDealerList() {
+      dealerListEl.innerHTML = "";
+      const status = document.createElement("div");
+      status.className = "dl-list-status";
+      status.dataset.listStatus = "true";
+      status.textContent = "Loading company dealers...";
+      dealerListEl.appendChild(status);
+
+      if (!dealerPoints.length) {
+        dealerListEl.insertAdjacentHTML(
+          "beforeend",
+          `
+          <div class="dl-card">
+            <div class="dl-pin-mini" aria-hidden="true"></div>
+            <div>
+              <h2>No dealers found</h2>
+              <p>No company locations match this filter.</p>
+            </div>
+          </div>
+        `
+        );
+        return;
+      }
+
+      dealerPoints.forEach((dealer) => {
+        const card = document.createElement("button");
+        const dealerStatus = dealer.status || "Unknown";
+        const dealerStatusClass =
+          dealerStatus === "Approved"
+            ? " is-approved"
+            : dealerStatus === "Not approved"
+              ? " is-not-approved"
+              : "";
+        const locationName =
+          dealer.locationName && dealer.locationName !== dealer.name
+            ? `<p>${escapeHtml(dealer.locationName)}</p>`
+            : "";
+        const distanceLine =
+          Number.isFinite(dealer.distanceKm)
+            ? `<p class="dl-distance">Distance: ${Math.round(dealer.distanceKm)} km</p>`
+            : "";
+
+        card.className = "dl-card";
+        card.type = "button";
+        card.dataset.dealerId = dealer.id;
+        card.innerHTML = `
+          <div class="dl-pin-mini" aria-hidden="true"></div>
+          <div>
+            <h2>${escapeHtml(dealer.name)}</h2>
+            <p>${escapeHtml(dealer.address || "")}</p>
+            ${locationName}
+            ${distanceLine}
+            <p class="dl-dealer-radius">Radius: ${getDealerRadius(dealer.radius)} km</p>
+            <p class="dl-status${dealerStatusClass}">Status: ${escapeHtml(dealerStatus)}</p>
+          </div>
+        `;
+        card.addEventListener("click", () => {
+          hasUserSelectedDealer = true;
+          updateDealerCard(dealer);
+          renderDealerOnMap(dealer, { focusSelected: true });
+        });
+        dealerListEl.appendChild(card);
+      });
+
+      updateDealerCard(currentDealer);
+    }
+
+    async function fetchJsonSafe(url, timeoutMs = 8000) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+      try {
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: { Accept: "application/json", "Accept-Language": "en" },
+          referrerPolicy: "no-referrer-when-downgrade",
+        });
+
+        clearTimeout(timeout);
+        if (!response.ok) return null;
+        return await response.json();
+      } catch (error) {
+        clearTimeout(timeout);
+        return null;
+      }
+    }
+
+    function jsonp(url, cbParam = "json_callback", timeoutMs = 9000) {
+      return new Promise((resolve) => {
+        const cbName = `__dealer_locator_jsonp_${Date.now()}_${Math.random()
+          .toString(16)
+          .slice(2)}`;
+        const script = document.createElement("script");
+        const separator = url.includes("?") ? "&" : "?";
+        const timeout = setTimeout(() => cleanup(null), timeoutMs);
+
+        function cleanup(data) {
+          clearTimeout(timeout);
+          try {
+            delete window[cbName];
+          } catch (error) {
+            window[cbName] = undefined;
+          }
+          if (script.parentNode) script.parentNode.removeChild(script);
+          resolve(data);
+        }
+
+        window[cbName] = cleanup;
+        script.onerror = () => cleanup(null);
+        script.src = `${url}${separator}${cbParam}=${encodeURIComponent(cbName)}`;
+        document.head.appendChild(script);
+      });
+    }
+
+    async function geoapifyAutocomplete(query, limit = ADDRESS_SUGGEST_LIMIT) {
+      if (!GEOAPIFY_API_KEY) return [];
+
+      const url =
+        "https://api.geoapify.com/v1/geocode/autocomplete?" +
+        new URLSearchParams({
+          text: enhanceGeocodeQuery(query),
+          apiKey: GEOAPIFY_API_KEY,
+          limit: String(limit),
+          lang: "en",
+          format: "json",
+          filter: `countrycode:${GEOAPIFY_COUNTRY}`,
+        }).toString();
+
+      const data = await fetchJsonSafe(url, 8000);
+      if (!data || !Array.isArray(data.results)) return [];
+
+      const seen = new Set();
+      return data.results
+        .map((result) => String(result.formatted || "").trim())
+        .filter(Boolean)
+        .filter(isCanadaLabel)
+        .filter((label) => {
+          const key = label.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, limit);
+    }
+
+    function buildNominatimLabel(hit) {
+      const address = hit.address || {};
+      const house = address.house_number || "";
+      const road =
+        address.road ||
+        address.pedestrian ||
+        address.footway ||
+        address.path ||
+        "";
+      const city =
+        address.city ||
+        address.town ||
+        address.village ||
+        address.hamlet ||
+        "";
+      const state = address.state || "";
+      const country = address.country || "Canada";
+      const line1 = [house, road].filter(Boolean).join(" ").trim();
+      const line2 = [city, state].filter(Boolean).join(", ").trim();
+
+      return [line1 || hit.display_name, line2, country]
+        .filter(Boolean)
+        .join(", ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    async function nominatimSuggest(query, limit = ADDRESS_SUGGEST_LIMIT) {
+      const url =
+        "https://nominatim.openstreetmap.org/search?" +
+        new URLSearchParams({
+          q: enhanceGeocodeQuery(query),
+          format: "jsonv2",
+          addressdetails: "1",
+          limit: String(Math.max(12, limit * 5)),
+          countrycodes: "ca",
+        }).toString();
+
+      const data = await jsonp(url, "json_callback", 9000);
+      if (!Array.isArray(data)) return [];
+
+      const seen = new Set();
+      const labels = [];
+
+      data.forEach((hit) => {
+        const label = buildNominatimLabel(hit);
+        const key = label.toLowerCase();
+
+        if (!label || !isCanadaLabel(label) || seen.has(key)) return;
+
+        seen.add(key);
+        labels.push(label);
+      });
+
+      return labels.slice(0, limit);
+    }
+
+    async function geoapifyGeocode(query) {
+      if (!GEOAPIFY_API_KEY) return null;
+
+      const url =
+        "https://api.geoapify.com/v1/geocode/search?" +
+        new URLSearchParams({
+          text: enhanceGeocodeQuery(query),
+          apiKey: GEOAPIFY_API_KEY,
+          limit: "1",
+          lang: "en",
+          format: "json",
+          filter: `countrycode:${GEOAPIFY_COUNTRY}`,
+        }).toString();
+
+      const data = await fetchJsonSafe(url, 9000);
+      if (!data || !Array.isArray(data.results) || !data.results.length) {
+        return null;
+      }
+
+      const result = data.results[0];
+      const lat = Number(result.lat);
+      const lng = Number(result.lon);
+      const label = String(result.formatted || query).trim();
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || !isCanadaLabel(label)) {
+        return null;
+      }
+
+      return { lat, lng, label };
+    }
+
+    async function nominatimGeocode(query) {
+      const url =
+        "https://nominatim.openstreetmap.org/search?" +
+        new URLSearchParams({
+          q: enhanceGeocodeQuery(query),
+          format: "jsonv2",
+          addressdetails: "1",
+          limit: "1",
+          countrycodes: "ca",
+        }).toString();
+
+      const data = await jsonp(url, "json_callback", 9000);
+      if (!Array.isArray(data) || !data.length) return null;
+
+      const result = data[0];
+      const lat = Number(result.lat);
+      const lng = Number(result.lon);
+      const label = buildNominatimLabel(result);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || !isCanadaLabel(label)) {
+        return null;
+      }
+
+      return { lat, lng, label };
+    }
+
+    async function geocodeAddress(query) {
+      return (await geoapifyGeocode(query)) || (await nominatimGeocode(query));
+    }
+
+    function addMarkerOffsets(points) {
+      const groups = new Map();
+
+      points.forEach((point) => {
+        const key = `${Number(point.lat).toFixed(5)},${Number(point.lng).toFixed(5)}`;
+        groups.set(key, [...(groups.get(key) || []), point.id]);
+      });
+
+      const offsetsById = new Map();
+      groups.forEach((ids) => {
+        if (ids.length === 1) {
+          offsetsById.set(ids[0], { x: 0, y: 0 });
+          return;
+        }
+
+        ids.forEach((id, index) => {
+          const angle = -Math.PI / 2 + (Math.PI * 2 * index) / ids.length;
+          const distance = 24;
+          offsetsById.set(id, {
+            x: Math.round(Math.cos(angle) * distance),
+            y: Math.round(Math.sin(angle) * distance),
+          });
+        });
+      });
+
+      return points.map((point) => ({
+        ...point,
+        markerOffset: offsetsById.get(point.id) || { x: 0, y: 0 },
+      }));
+    }
+
+    async function loadDealerPoints() {
+      let endpointError = "";
+
+      try {
+        const response = await fetch(`${DEALERS_ENDPOINT}?t=${Date.now()}`, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        });
+        const data = response.ok ? await response.json() : null;
+
+        if (!response.ok) {
+          endpointError = `Dealer endpoint failed: ${response.status}`;
+        } else if (data?.error) {
+          endpointError = data.error;
+        }
+
+        const dealers = Array.isArray(data?.dealers) ? data.dealers : [];
+        const points = await Promise.all(
+          dealers.map(async (dealer) => {
+            const result = await geocodeAddress(dealer.address);
+
+            if (!result) return null;
+
+            return {
+              ...dealer,
+              radius: getDealerRadius(dealer.radius),
+              lat: result.lat,
+              lng: result.lng,
+            };
+          })
+        );
+
+        dealerPoints = addMarkerOffsets(points.filter(Boolean));
+      } catch (error) {
+        endpointError = "Dealer endpoint could not be reached.";
+        dealerPoints = [];
+      }
+
+      if (!dealerPoints.length) {
+        dealerPoints = [FALLBACK_DEALER];
+      }
+
+      updateDealerCard(dealerPoints[0]);
+      renderDealerList();
+
+      const status = dealerListEl.querySelector("[data-list-status]");
+      if (status) {
+        status.textContent = endpointError
+          ? `${endpointError} Showing ${dealerPoints.length} dealer.`
+          : `${dealerPoints.length} company dealer${dealerPoints.length === 1 ? "" : "s"} loaded.`;
+      }
+
+      if (dealerPoints.length > 1 && !hasUserSelectedDealer) {
+        closestDealerInput.value = `${dealerPoints.length} company dealers`;
+      }
+
+      return dealerPoints;
+    }
+
+    function getClosestDealer(searchPoint) {
+      if (!searchPoint || !dealerPoints.length) return dealerPoints[0] || FALLBACK_DEALER;
+
+      return [...dealerPoints]
+        .map((dealer) => ({
+          ...dealer,
+          distance: getDistanceKm(searchPoint.lat, searchPoint.lng, dealer.lat, dealer.lng),
+        }))
+        .sort((first, second) => first.distance - second.distance)[0];
+    }
+
+    function sortDealersByDistance(searchPoint) {
+      if (!searchPoint || !dealerPoints.length) return;
+
+      dealerPoints = addMarkerOffsets(
+        dealerPoints
+          .map((dealer) => ({
+            ...dealer,
+            distanceKm: getDistanceKm(searchPoint.lat, searchPoint.lng, dealer.lat, dealer.lng),
+          }))
+          .sort((first, second) => first.distanceKm - second.distanceKm)
+      );
+    }
+
+    function loadLeaflet() {
+      if (window.L && typeof window.L.map === "function") {
+        return Promise.resolve();
+      }
+
+      return new Promise((resolve, reject) => {
+        if (!document.querySelector('link[href*="leaflet.css"]')) {
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+          document.head.appendChild(link);
+        }
+
+        const existingScript = document.querySelector('script[src*="leaflet.js"]');
+        if (existingScript) {
+          existingScript.addEventListener("load", () => resolve(), { once: true });
+          existingScript.addEventListener("error", () => reject(), { once: true });
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        script.onload = () => resolve();
+        script.onerror = () => reject();
+        document.head.appendChild(script);
+      });
+    }
+
+    function createPinIcon(color, offset = { x: 0, y: 0 }) {
+      const svg = encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="46" viewBox="0 0 34 46">
+          <path d="M17 0C9.3 0 3 6.3 3 14c0 10.3 14 32 14 32s14-21.7 14-32C31 6.3 24.7 0 17 0z" fill="${color}"/>
+          <circle cx="17" cy="14" r="6.2" fill="white" opacity="0.95"/>
+        </svg>
+      `);
+
+      return L.icon({
+        iconUrl: `data:image/svg+xml;charset=UTF-8,${svg}`,
+        iconSize: [34, 46],
+        iconAnchor: [17 - (offset.x || 0), 46 - (offset.y || 0)],
+        popupAnchor: [offset.x || 0, -38 + (offset.y || 0)],
+      });
+    }
+
+    async function initDealerMap() {
+      if (!mapCanvas) return;
+
+      await loadLeaflet();
+      await loadDealerPoints();
+
+      if (map) {
+        map.invalidateSize(true);
+        renderDealerOnMap(currentDealer, { focusSelected: hasUserSelectedDealer });
+        return;
+      }
+
+      const dealerLatLng = [currentDealer.lat, currentDealer.lng];
+      map = L.map(mapCanvas, {
+        zoomControl: true,
+        scrollWheelZoom: false,
+      }).setView(dealerLatLng, 8);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors",
+      }).addTo(map);
+
+      renderDealerOnMap(currentDealer, { focusSelected: false });
+      setTimeout(() => map.invalidateSize(true), 100);
+    }
+
+    function renderDealerOnMap(dealer, options = {}) {
+      if (!map || !dealer) return;
+
+      const focusSelected = options.focusSelected !== false;
+      const dealerLatLng = [dealer.lat, dealer.lng];
+
+      if (dealerMarker) {
+        map.removeLayer(dealerMarker);
+        dealerMarker = null;
+      }
+
+      if (selectedDealerMarker) {
+        map.removeLayer(selectedDealerMarker);
+        selectedDealerMarker = null;
+      }
+
+      if (dealerRadius) {
+        map.removeLayer(dealerRadius);
+      }
+
+      allDealerMarkers.forEach((marker) => map.removeLayer(marker));
+      allDealerMarkers = dealerPoints.map((point) =>
+        L.marker([point.lat, point.lng], {
+          icon: createPinIcon(point.id === dealer.id ? "#ff671d" : "#ff9b6e", point.markerOffset),
+          title: getDealerDisplayName(point),
+          dealerId: point.id,
+          zIndexOffset: point.id === dealer.id ? 1000 : 0,
+        })
+          .addTo(map)
+          .bindPopup(
+            `<strong>${escapeHtml(point.name)}</strong>` +
+              `${point.locationName && point.locationName !== point.name ? `<br>${escapeHtml(point.locationName)}` : ""}` +
+              `<br>${escapeHtml(point.address || "")}` +
+              `<br>${getDealerRadius(point.radius)} km dealer radius` +
+              `<br>Status: ${escapeHtml(point.status || "Unknown")}`
+          )
+      );
+
+      dealerRadius = L.circle(dealerLatLng, {
+        radius: getDealerRadius(dealer.radius) * 1000,
+        color: "#ff671d",
+        fillColor: "#ff671d",
+        fillOpacity: 0.08,
+        weight: 2,
+      }).addTo(map);
+
+      dealerMarker = allDealerMarkers.find(
+        (marker) => marker.options.dealerId === dealer.id
+      );
+
+      if (dealerMarker && focusSelected) {
+        dealerMarker.openPopup();
+      }
+
+      if (searchMarker || !focusSelected) {
+        const bounds = dealerRadius.getBounds();
+        if (searchMarker) bounds.extend(searchMarker.getLatLng());
+        allDealerMarkers.forEach((marker) => bounds.extend(marker.getLatLng()));
+        map.fitBounds(bounds, { padding: [36, 36] });
+      } else {
+        const bounds = dealerRadius.getBounds();
+        allDealerMarkers.forEach((marker) => bounds.extend(marker.getLatLng()));
+        map.fitBounds(bounds, { padding: [24, 24] });
+      }
+    }
+
+    async function showSearchMarker(label) {
+      const result = await geocodeAddress(label);
+      if (!result) return;
+
+      await loadDealerPoints();
+      await initDealerMap();
+      sortDealersByDistance(result);
+      hasUserSelectedDealer = true;
+      updateDealerCard(getClosestDealer(result));
+      renderDealerList();
+      renderDealerOnMap(currentDealer, { focusSelected: true });
+
+      if (searchMarker) {
+        map.removeLayer(searchMarker);
+      }
+
+      searchMarker = L.marker([result.lat, result.lng], {
+        icon: createPinIcon("#e53935"),
+        title: "Searched address",
+      })
+        .addTo(map)
+        .bindPopup(`<strong>Searched address</strong><br>${result.label}`);
+
+      searchMarker.openPopup();
+
+      const bounds = dealerRadius.getBounds();
+      bounds.extend(searchMarker.getLatLng());
+      allDealerMarkers.forEach((marker) => bounds.extend(marker.getLatLng()));
+      map.fitBounds(bounds, { padding: [36, 36] });
+
+      dealerRadius.bringToFront();
+      dealerMarker.openPopup();
+    }
+
+    async function fetchAddressSuggestions(query, limit = ADDRESS_SUGGEST_LIMIT) {
+      const raw = String(query || "").trim();
+      if (raw.length < 3) return [];
+
+      const cacheKey = `${raw.toLowerCase()}::${limit}`;
+      const cached = addressSuggestCache.get(cacheKey);
+      if (cached && Date.now() - cached.time < ADDRESS_CACHE_TTL) {
+        return cached.data;
+      }
+
+      let labels = await geoapifyAutocomplete(raw, limit);
+      if (!labels.length) {
+        labels = await nominatimSuggest(raw, limit);
+      }
+
+      addressSuggestCache.set(cacheKey, { time: Date.now(), data: labels });
+      return labels;
+    }
+
+    function splitSuggestionLabel(label) {
+      const parts = String(label || "")
+        .split(",")
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      return {
+        title: parts[0] || label,
+        detail: parts.slice(1).join(", "),
+        value: label,
+      };
+    }
+
+    function renderSuggestionItems(labels) {
+      suggestionsPanel.innerHTML = "";
+
+      labels.map(splitSuggestionLabel).forEach((item) => {
+        const button = document.createElement("button");
+        const title = document.createElement("strong");
+        const detail = document.createElement("span");
+
+        button.className = "dl-suggestion";
+        button.type = "button";
+        button.dataset.addressValue = item.value;
+        title.textContent = item.title;
+        detail.textContent = item.detail;
+        button.append(title, detail);
+        suggestionsPanel.appendChild(button);
+      });
+
+      suggestionsPanel.classList.toggle("is-visible", labels.length > 0);
+    }
+
+    async function renderSuggestions(query) {
+      const cleanedQuery = query.trim();
+
+      if (!cleanedQuery) {
+        suggestionsPanel.classList.remove("is-visible");
+        suggestionsPanel.innerHTML = "";
+        return;
+      }
+
+      const token = ++lastAddressSuggestToken;
+      const labels = await fetchAddressSuggestions(cleanedQuery);
+
+      if (token !== lastAddressSuggestToken) return;
+
+      renderSuggestionItems(labels);
+    }
+
+    addressInput.addEventListener("input", () => {
+      clearTimeout(addressSuggestDebounce);
+      addressSuggestDebounce = setTimeout(() => {
+        renderSuggestions(addressInput.value);
+      }, ADDRESS_SUGGEST_DEBOUNCE_MS);
+    });
+
+    suggestionsPanel.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-address-value]");
+
+      if (!button) {
+        return;
+      }
+
+      addressInput.value = button.dataset.addressValue;
+      suggestionsPanel.classList.remove("is-visible");
+      showSearchMarker(addressInput.value);
+    });
+
+    addressInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+
+      event.preventDefault();
+      suggestionsPanel.classList.remove("is-visible");
+      showSearchMarker(addressInput.value);
+    });
+
+
+    document.addEventListener("click", (event) => {
+      if (!root.contains(event.target)) {
+        suggestionsPanel.classList.remove("is-visible");
+      }
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Dealer locator",
+  "settings": [],
+  "presets": [
+    {
+      "name": "Dealer locator"
+    }
+  ]
+}
+{% endschema %}
