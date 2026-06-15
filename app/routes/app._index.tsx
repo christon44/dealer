@@ -29,6 +29,7 @@ type Dealer = {
   address: string;
   phone: string;
   addressQuery: string;
+  status: "Approved" | "Not approved";
 };
 
 type DealerPoint = Dealer & {
@@ -181,16 +182,29 @@ export default function DealerMap() {
   );
   const [searchPoint, setSearchPoint] = useState<SearchPoint | null>(null);
   const [selectedDealerId, setSelectedDealerId] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "approved">("all");
   const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
   const mapNodeRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layersRef = useRef<LeafletLayer[]>([]);
 
+  const approvedCount = useMemo(
+    () => dealers.filter((dealer) => dealer.status === "Approved").length,
+    [dealers],
+  );
+  const filteredDealers = useMemo(
+    () =>
+      statusFilter === "approved"
+        ? dealers.filter((dealer) => dealer.status === "Approved")
+        : dealers,
+    [dealers, statusFilter],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
     Promise.all(
-      dealers.map(async (dealer) => {
+      filteredDealers.map(async (dealer) => {
         const result = await geocode(dealer.addressQuery, 1);
         const point = toDealerPoint(dealer, result[0]);
 
@@ -209,7 +223,7 @@ export default function DealerMap() {
     return () => {
       cancelled = true;
     };
-  }, [dealers]);
+  }, [filteredDealers]);
 
   const selectedDealer =
     dealerPoints.find((dealer) => dealer.id === selectedDealerId) ||
@@ -374,6 +388,32 @@ export default function DealerMap() {
   return (
     <s-page heading="Internal Dealer Map">
       <s-section>
+        <s-banner heading="Welcome to the Internal Dealer Map" tone="info">
+          <s-paragraph>
+            Search any address to find the nearest company dealer, review
+            contact details, and see coverage areas on the map. Use the
+            settings below to control which companies are shown.
+          </s-paragraph>
+        </s-banner>
+      </s-section>
+      <s-section heading="Settings">
+        <s-stack direction="inline" gap="base" alignItems="end">
+          <s-select
+            label="Show companies"
+            value={statusFilter}
+            onChange={(event) => {
+              const value = (event.target as HTMLSelectElement).value;
+              setStatusFilter(value === "approved" ? "approved" : "all");
+            }}
+          >
+            <s-option value="all">All companies</s-option>
+            <s-option value="approved">Approved only</s-option>
+          </s-select>
+          <s-badge tone="success">{approvedCount} approved</s-badge>
+          <s-badge tone="neutral">{dealers.length} total</s-badge>
+        </s-stack>
+      </s-section>
+      <s-section>
         <div className={styles.toolbar}>
           <label className={`${styles.field} ${styles.searchField}`}>
             <span>Search address</span>
@@ -452,6 +492,11 @@ export default function DealerMap() {
                 </span>
                 <span className={styles.dealerDetails}>
                   <strong>{dealer.name}</strong>
+                  <s-badge
+                    tone={dealer.status === "Approved" ? "success" : "warning"}
+                  >
+                    {dealer.status}
+                  </s-badge>
                   <span>{dealer.address}</span>
                   {dealer.locationName !== dealer.name ? (
                     <span>{dealer.locationName}</span>
@@ -484,7 +529,7 @@ function normalizeDealer(node: CompanyLocationNode): Dealer | null {
     .filter(Boolean)
     .join(", ");
 
-  if (!isApprovedForOrdering || !addressParts) {
+  if (!addressParts) {
     return null;
   }
 
@@ -495,6 +540,7 @@ function normalizeDealer(node: CompanyLocationNode): Dealer | null {
     address: addressParts,
     phone: node.phone || "",
     addressQuery: addressParts,
+    status: isApprovedForOrdering ? "Approved" : "Not approved",
   };
 }
 
