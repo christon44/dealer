@@ -104,11 +104,17 @@
   }
 
   .dl-controls {
-    display: grid;
-    grid-template-columns: minmax(260px, 1.05fr) minmax(260px, 1.05fr);
-    gap: 16px;
-    align-items: start;
+    position: relative;
+    z-index: 10;
     margin-bottom: 20px;
+  }
+
+  .dl-search-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 14px;
   }
 
   .dl-field {
@@ -140,7 +146,7 @@
     top: calc(100% + 6px);
     left: 0;
     right: 0;
-    z-index: 20;
+    z-index: 1000;
     display: none;
     overflow: hidden;
     border: 1px solid #d7dbe2;
@@ -200,7 +206,6 @@
   .dl-search-actions {
     display: flex;
     gap: 8px;
-    margin-top: 10px;
   }
 
   .dl-btn {
@@ -299,14 +304,20 @@
     line-height: 1.4;
   }
 
+  .dl-badges {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin: 0 0 8px;
+  }
+
   .dl-meta-badge {
     display: inline-block;
-    margin-left: 8px;
     padding: 3px 11px;
     border-radius: 999px;
     font-size: 12px;
     font-weight: 800;
-    vertical-align: middle;
+    white-space: nowrap;
   }
 
   .dl-rank-badge {
@@ -379,10 +390,10 @@
       padding: 14px;
     }
 
-    .dl-controls,
+    .dl-search-row,
     .dl-results {
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 12px;
     }
 
     .dl-card {
@@ -411,10 +422,12 @@
 
   <main class="dl-page" data-dealer-content aria-label="Dealer locator">
     <section class="dl-controls" aria-label="Search filters">
-      <div class="dl-field">
-        <label for="dealer-locator-address">Search address or dealer</label>
-        <input class="dl-input" id="dealer-locator-address" type="text" placeholder="Type a dealer or address" autocomplete="off" data-address-search>
-        <div class="dl-suggestions" data-address-suggestions></div>
+      <div class="dl-search-row">
+        <div class="dl-field">
+          <label for="dealer-locator-address">Search address or dealer</label>
+          <input class="dl-input" id="dealer-locator-address" type="text" placeholder="Type a dealer or address" autocomplete="off" data-address-search>
+          <div class="dl-suggestions" data-address-suggestions></div>
+        </div>
         <div class="dl-search-actions">
           <button type="button" class="dl-btn dl-btn-search" data-search-button>Search</button>
           <button type="button" class="dl-btn dl-btn-reset" data-reset-button>Reset</button>
@@ -619,7 +632,8 @@
         card.innerHTML = `
           <div class="dl-pin-mini" aria-hidden="true"></div>
           <div>
-            <h2>${escapeHtml(dealer.name)}${rankBadge}${distanceBadge}${radiusBadge}</h2>
+            <h2>${escapeHtml(dealer.name)}</h2>
+            <div class="dl-badges">${rankBadge}${distanceBadge}${radiusBadge}</div>
             <span class="dl-status${dealerStatusClass}">${escapeHtml(dealerStatus)}</span>
             <p>${escapeHtml(dealer.address || "")}</p>
             ${locationName}
