@@ -27,8 +27,3 @@ jobs:
         env:
           SHOPIFY_APP_AUTOMATION_TOKEN: ${{ secrets.SHOPIFY_APP_AUTOMATION_TOKEN_CA }}
         run: shopify app deploy --config ca --allow-updates
-
-      - name: Deploy US
-        env:
-          SHOPIFY_APP_AUTOMATION_TOKEN: ${{ secrets.SHOPIFY_APP_AUTOMATION_TOKEN_US }}
-        run: shopify app deploy --config us --allow-updates
