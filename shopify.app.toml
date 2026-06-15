@@ -14,7 +14,7 @@ api_version = "2026-07"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_companies,write_app_proxy"
+scopes = "read_companies,write_app_proxy,read_themes,write_themes,write_content"
 
 [app_proxy]
 url = "/apps/dealer-locator"
