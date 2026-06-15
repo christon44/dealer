@@ -273,15 +273,23 @@
   }
 
   .dl-status {
+    display: inline-block;
+    margin: 0 0 8px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #eef0f3;
     color: #4b5563;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 700;
   }
 
   .dl-status.is-approved {
+    background: #d3f2dc;
     color: #087443;
   }
 
   .dl-status.is-not-approved {
+    background: #ffe6c7;
     color: #8a3a00;
   }
 
@@ -551,11 +559,11 @@
           <div class="dl-pin-mini" aria-hidden="true"></div>
           <div>
             <h2>${escapeHtml(dealer.name)}</h2>
+            <span class="dl-status${dealerStatusClass}">${escapeHtml(dealerStatus)}</span>
             <p>${escapeHtml(dealer.address || "")}</p>
             ${locationName}
             ${distanceLine}
             <p class="dl-dealer-radius">Radius: ${getDealerRadius(dealer.radius)} km</p>
-            <p class="dl-status${dealerStatusClass}">Status: ${escapeHtml(dealerStatus)}</p>
           </div>
         `;
         card.addEventListener("click", () => {
