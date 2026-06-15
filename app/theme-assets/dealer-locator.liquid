@@ -107,7 +107,7 @@
     display: grid;
     grid-template-columns: minmax(260px, 1.05fr) minmax(260px, 1.05fr);
     gap: 16px;
-    align-items: end;
+    align-items: start;
     margin-bottom: 20px;
   }
 
@@ -299,11 +299,6 @@
     line-height: 1.4;
   }
 
-  .dl-card .dl-dealer-radius {
-    color: #9f3308;
-    font-weight: 800;
-  }
-
   .dl-meta-badge {
     display: inline-block;
     margin-left: 8px;
@@ -322,6 +317,11 @@
   .dl-distance-badge {
     background: #eef0f3;
     color: #4b5563;
+  }
+
+  .dl-radius-badge {
+    background: #ffe9d9;
+    color: #9f3308;
   }
 
   .dl-status {
@@ -611,6 +611,7 @@
         const distanceBadge = Number.isFinite(dealer.distanceKm)
           ? `<span class="dl-meta-badge dl-distance-badge">${Math.round(dealer.distanceKm)} km</span>`
           : "";
+        const radiusBadge = `<span class="dl-meta-badge dl-radius-badge">${getDealerRadius(dealer.radius)} km radius</span>`;
 
         card.className = "dl-card";
         card.type = "button";
@@ -618,11 +619,10 @@
         card.innerHTML = `
           <div class="dl-pin-mini" aria-hidden="true"></div>
           <div>
-            <h2>${escapeHtml(dealer.name)}${rankBadge}${distanceBadge}</h2>
+            <h2>${escapeHtml(dealer.name)}${rankBadge}${distanceBadge}${radiusBadge}</h2>
             <span class="dl-status${dealerStatusClass}">${escapeHtml(dealerStatus)}</span>
             <p>${escapeHtml(dealer.address || "")}</p>
             ${locationName}
-            <p class="dl-dealer-radius">Radius: ${getDealerRadius(dealer.radius)} km</p>
           </div>
         `;
         card.addEventListener("click", () => selectDealer(dealer));
