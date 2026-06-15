@@ -105,16 +105,21 @@
 
   .dl-controls {
     position: relative;
-    z-index: 10;
+    z-index: 500;
     margin-bottom: 20px;
   }
 
   .dl-search-row {
+    position: relative;
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 12px;
     align-items: end;
     margin-bottom: 14px;
+  }
+
+  .dl-field-address {
+    position: static;
   }
 
   .dl-field {
@@ -423,7 +428,7 @@
   <main class="dl-page" data-dealer-content aria-label="Dealer locator">
     <section class="dl-controls" aria-label="Search filters">
       <div class="dl-search-row">
-        <div class="dl-field">
+        <div class="dl-field dl-field-address">
           <label for="dealer-locator-address">Search address or dealer</label>
           <input class="dl-input" id="dealer-locator-address" type="text" placeholder="Type a dealer or address" autocomplete="off" data-address-search>
           <div class="dl-suggestions" data-address-suggestions></div>
