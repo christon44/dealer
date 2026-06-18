@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "12bcf1fa50c7e637268da013507fe773"
+client_id = "df9f82ab57aa57cea0a1239430a15ebe"
 name = "Dealers-Internal Management"
 application_url = "https://dealers.apps.tmgindustrial.com"
 embedded = true
