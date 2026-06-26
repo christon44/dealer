@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 
-const DEFAULT_RADIUS_KM = 70;
+const DEFAULT_RADIUS_KM = 50;
 
 type Address = {
   address1: string | null;

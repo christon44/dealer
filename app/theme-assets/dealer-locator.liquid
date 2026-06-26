@@ -223,6 +223,11 @@
     cursor: pointer;
   }
 
+  .dl-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+
   .dl-btn-search {
     background: #1f6fd6;
     color: #ffffff;
@@ -285,6 +290,10 @@
     background: #ff5f1f;
     clip-path: polygon(50% 100%, 4% 28%, 14% 0, 86% 0, 96% 28%);
   }
+
+  .dl-pin-mini[aria-hidden=true] {
+      display: block!important;
+    }
 
   .dl-pin-mini::after {
     position: absolute;
@@ -457,7 +466,7 @@
 <script>
   (() => {
     const root = document.currentScript.previousElementSibling;
-    const password = "2026Year";
+    const password = "TMG2026";
     const form = root.querySelector("[data-dealer-form]");
     const input = root.querySelector("[data-dealer-password]");
     const login = root.querySelector("[data-dealer-login]");
@@ -474,7 +483,7 @@
     const GEOAPIFY_API_KEY = "a335b186e0ae4db1821dae89eb83f53f";
     const GEOAPIFY_COUNTRY = "ca";
     const DEALERS_ENDPOINT = "/apps/dealer-locator/companies";
-    const FALLBACK_RADIUS_KM = 75;
+    const FALLBACK_RADIUS_KM = 50;
     const DEFAULT_MAP_CENTER = { lat: 56.1304, lng: -106.3468 };
     const DEFAULT_MAP_ZOOM = 4;
     const ADDRESS_SUGGEST_LIMIT = 5;
@@ -488,6 +497,7 @@
     let dealerRadius = null;
     let searchMarker = null;
     let allDealerMarkers = [];
+    let allDealerCircles = [];
     let selectedDealerMarker = null;
     let dealerPoints = [];
     let baseDealerPoints = [];
@@ -1046,7 +1056,6 @@
       if (!map || !dealer) return;
 
       const focusSelected = options.focusSelected !== false;
-      const dealerLatLng = [dealer.lat, dealer.lng];
 
       if (dealerMarker) {
         map.removeLayer(dealerMarker);
@@ -1058,10 +1067,7 @@
         selectedDealerMarker = null;
       }
 
-      if (dealerRadius) {
-        map.removeLayer(dealerRadius);
-      }
-
+      allDealerCircles.forEach((circle) => map.removeLayer(circle));
       allDealerMarkers.forEach((marker) => map.removeLayer(marker));
       allDealerMarkers = dealerPoints.map((point) =>
         L.marker([point.lat, point.lng], {
@@ -1080,13 +1086,23 @@
           )
       );
 
-      dealerRadius = L.circle(dealerLatLng, {
-        radius: getDealerRadius(dealer.radius) * 1000,
-        color: "#ff671d",
-        fillColor: "#ff671d",
-        fillOpacity: 0.08,
-        weight: 2,
-      }).addTo(map);
+      allDealerCircles = dealerPoints.map((point) => {
+        const isSelected = point.id === dealer.id;
+        return L.circle([point.lat, point.lng], {
+          radius: getDealerRadius(point.radius) * 1000,
+          color: "#ff671d",
+          fillColor: "#ff671d",
+          fillOpacity: isSelected ? 0.08 : 0.06,
+          opacity: isSelected ? 0.9 : 0.45,
+          weight: isSelected ? 2 : 1,
+          dealerId: point.id,
+        }).addTo(map);
+      });
+
+      dealerRadius = allDealerCircles.find((circle) => circle.options.dealerId === dealer.id);
+      if (dealerRadius) {
+        dealerRadius.bringToFront();
+      }
 
       dealerMarker = allDealerMarkers.find(
         (marker) => marker.options.dealerId === dealer.id
@@ -1108,37 +1124,46 @@
     }
 
     async function showSearchMarker(label) {
-      const result = await geocodeAddress(label);
-      if (!result) return;
+      const originalSearchButtonText = searchButton.textContent;
+      searchButton.disabled = true;
+      searchButton.textContent = "Searching...";
 
-      await loadDealerPoints();
-      await initDealerMap();
-      sortDealersByDistance(result);
-      hasUserSelectedDealer = true;
-      updateDealerCard(getClosestDealer(result));
-      renderDealerList();
+      try {
+        const result = await geocodeAddress(label);
+        if (!result) return;
 
-      if (searchMarker) {
-        map.removeLayer(searchMarker);
-      }
+        await loadDealerPoints();
+        await initDealerMap();
+        sortDealersByDistance(result);
+        hasUserSelectedDealer = true;
+        updateDealerCard(getClosestDealer(result));
+        renderDealerList();
 
-      searchMarker = L.marker([result.lat, result.lng], {
-        icon: createPinIcon("#e53935"),
-        title: "Searched address",
-      })
-        .addTo(map)
-        .bindPopup(`<strong>Searched address</strong><br>${result.label}`);
+        if (searchMarker) {
+          map.removeLayer(searchMarker);
+        }
 
-      if (!currentDealer) {
-        map.setView([result.lat, result.lng], 8);
+        searchMarker = L.marker([result.lat, result.lng], {
+          icon: createPinIcon("#e53935"),
+          title: "Searched address",
+        })
+          .addTo(map)
+          .bindPopup(`<strong>Searched address</strong><br>${result.label}`);
+
+        if (!currentDealer) {
+          map.setView([result.lat, result.lng], 8);
+          searchMarker.openPopup();
+          return;
+        }
+
+        renderDealerOnMap(currentDealer, { focusSelected: true });
         searchMarker.openPopup();
-        return;
+        dealerRadius.bringToFront();
+        dealerMarker.openPopup();
+      } finally {
+        searchButton.disabled = false;
+        searchButton.textContent = originalSearchButtonText;
       }
-
-      renderDealerOnMap(currentDealer, { focusSelected: true });
-      searchMarker.openPopup();
-      dealerRadius.bringToFront();
-      dealerMarker.openPopup();
     }
 
     async function fetchAddressSuggestions(query, limit = ADDRESS_SUGGEST_LIMIT) {
