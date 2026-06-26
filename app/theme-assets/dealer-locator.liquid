@@ -490,6 +490,7 @@
     const ADDRESS_SUGGEST_DEBOUNCE_MS = 250;
     const ADDRESS_CACHE_TTL = 60 * 1000;
     const addressSuggestCache = new Map();
+    const geocodeCache = new Map();
     let addressSuggestDebounce = null;
     let lastAddressSuggestToken = 0;
     let map = null;
@@ -860,7 +861,16 @@
     }
 
     async function geocodeAddress(query) {
-      return (await geoapifyGeocode(query)) || (await nominatimGeocode(query));
+      const cacheKey = String(query || "").trim().toLowerCase();
+      if (geocodeCache.has(cacheKey)) {
+        return geocodeCache.get(cacheKey);
+      }
+
+      const result = (await geoapifyGeocode(query)) || (await nominatimGeocode(query));
+      if (result) {
+        geocodeCache.set(cacheKey, result);
+      }
+      return result;
     }
 
     function addMarkerOffsets(points) {
@@ -1132,7 +1142,6 @@
         const result = await geocodeAddress(label);
         if (!result) return;
 
-        await loadDealerPoints();
         await initDealerMap();
         sortDealersByDistance(result);
         hasUserSelectedDealer = true;
