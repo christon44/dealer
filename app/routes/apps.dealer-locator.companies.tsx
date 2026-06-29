@@ -27,6 +27,7 @@ type CompanyLocationNode = {
     };
   };
   metafield: { value: string } | null;
+  showOnMap: { value: string } | null;
   shippingAddress: Address | null;
   billingAddress: Address | null;
 };
@@ -69,6 +70,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               name
               phone
               metafield(namespace: "custom", key: "radius") {
+                value
+              }
+              showOnMap: metafield(namespace: "custom", key: "show_on_map") {
                 value
               }
               company {
@@ -119,6 +123,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const dealers: NonNullable<ReturnType<typeof normalizeDealer>>[] = [];
   for (const node of nodes) {
+    if (node.showOnMap?.value === "false") continue;
     const dealer = normalizeDealer(node);
     if (dealer && dealer.status === "Approved") {
       dealers.push(dealer);
