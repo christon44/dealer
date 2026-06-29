@@ -589,7 +589,10 @@
         return;
       }
 
-      closestDealerInput.value = getDealerDisplayName(currentDealer);
+      const distanceSuffix = Number.isFinite(currentDealer.distanceKm)
+        ? ` (${Math.round(currentDealer.distanceKm)} km away)`
+        : "";
+      closestDealerInput.value = `${getDealerDisplayName(currentDealer)}${distanceSuffix}`;
       dealerListEl
         .querySelectorAll("[data-dealer-id]")
         .forEach((card) => {
@@ -665,7 +668,7 @@
     function selectDealer(dealer) {
       hasUserSelectedDealer = true;
       updateDealerCard(dealer);
-      renderDealerOnMap(dealer, { focusSelected: true });
+      renderDealerOnMap(dealer, { focusSelected: true, includeSearchMarker: false });
     }
 
     async function fetchJsonSafe(url, timeoutMs = 8000) {
@@ -944,7 +947,9 @@
         baseDealerPoints = [];
       }
 
-      updateDealerCard(dealerPoints[0] || null);
+      if (!hasUserSelectedDealer) {
+        updateDealerCard(dealerPoints[0] || null);
+      }
       renderDealerList();
 
       const status = dealerListEl.querySelector("[data-list-status]");
@@ -1042,7 +1047,7 @@
 
       if (map) {
         map.invalidateSize(true);
-        renderDealerOnMap(currentDealer, { focusSelected: hasUserSelectedDealer });
+        renderDealerOnMap(currentDealer, { focusSelected: hasUserSelectedDealer, includeSearchMarker: false });
         return;
       }
 
@@ -1066,6 +1071,7 @@
       if (!map || !dealer) return;
 
       const focusSelected = options.focusSelected !== false;
+      const includeSearchMarker = options.includeSearchMarker !== false;
 
       if (dealerMarker) {
         map.removeLayer(dealerMarker);
@@ -1124,7 +1130,7 @@
 
       if (focusSelected) {
         const bounds = dealerRadius.getBounds();
-        if (searchMarker) bounds.extend(searchMarker.getLatLng());
+        if (includeSearchMarker && searchMarker) bounds.extend(searchMarker.getLatLng());
         map.fitBounds(bounds, { padding: [36, 36] });
       } else {
         const bounds = dealerRadius.getBounds();
