@@ -1,7 +1,9 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 
-const DEFAULT_RADIUS_KM = 70;
+const FALLBACK_DEFAULT_RADIUS_KM = 50;
+const DEFAULT_RADIUS_NAMESPACE = "custom";
+const DEFAULT_RADIUS_KEY = "dealer_locator_default_radius";
 
 type Address = {
   address1: string | null;
@@ -27,6 +29,7 @@ type CompanyLocationNode = {
     };
   };
   metafield: { value: string } | null;
+  showOnMap: { value: string } | null;
   shippingAddress: Address | null;
   billingAddress: Address | null;
 };
@@ -44,12 +47,42 @@ type DealerQueryResponse = {
   errors?: unknown;
 };
 
+type ShopDefaultRadiusResponse = {
+  data?: {
+    shop?: {
+      defaultRadius?: { value: string } | null;
+    };
+  };
+  errors?: unknown;
+};
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.public.appProxy(request);
 
   if (!admin) {
     return json({ dealers: [], error: "No app proxy session was found." }, 401);
   }
+
+  const defaultRadiusResponse = await admin.graphql(
+    `#graphql
+      query DealerLocatorDefaultRadius {
+        shop {
+          defaultRadius: metafield(namespace: "${DEFAULT_RADIUS_NAMESPACE}", key: "${DEFAULT_RADIUS_KEY}") {
+            value
+          }
+        }
+      }`,
+  );
+  const defaultRadiusPayload =
+    (await defaultRadiusResponse.json()) as ShopDefaultRadiusResponse;
+  const defaultRadiusValue = defaultRadiusPayload.data?.shop?.defaultRadius?.value;
+  const defaultRadiusKm =
+    defaultRadiusValue === null ||
+    defaultRadiusValue === undefined ||
+    defaultRadiusValue === "" ||
+    !Number.isFinite(Number(defaultRadiusValue))
+      ? FALLBACK_DEFAULT_RADIUS_KM
+      : Number(defaultRadiusValue);
 
   const nodes: CompanyLocationNode[] = [];
   let cursor: string | null = null;
@@ -69,6 +102,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
               name
               phone
               metafield(namespace: "custom", key: "radius") {
+                value
+              }
+              showOnMap: metafield(namespace: "custom", key: "show_on_map") {
                 value
               }
               company {
@@ -119,7 +155,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   const dealers: NonNullable<ReturnType<typeof normalizeDealer>>[] = [];
   for (const node of nodes) {
-    const dealer = normalizeDealer(node);
+    if (node.showOnMap?.value === "false") continue;
+    const dealer = normalizeDealer(node, defaultRadiusKm);
     if (dealer && dealer.status === "Approved") {
       dealers.push(dealer);
     }
@@ -128,7 +165,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return json({ dealers, error: "" });
 };
 
-function normalizeDealer(node: CompanyLocationNode) {
+function normalizeDealer(node: CompanyLocationNode, defaultRadiusKm: number) {
   const address = node.shippingAddress || node.billingAddress;
   const addressParts = [
     address?.address1,
@@ -143,7 +180,7 @@ function normalizeDealer(node: CompanyLocationNode) {
   const radiusValue = node.metafield?.value;
   const radius =
     radiusValue === null || radiusValue === undefined || radiusValue === ""
-      ? DEFAULT_RADIUS_KM
+      ? defaultRadiusKm
       : Number(radiusValue);
   const isApprovedForOrdering = node.company.locations.nodes.some(
     (location) => location.roleAssignments.nodes.length > 0,
@@ -163,7 +200,7 @@ function normalizeDealer(node: CompanyLocationNode) {
     address: addressParts,
     phone: node.phone || "",
     status,
-    radius: Number.isFinite(radius) ? radius : DEFAULT_RADIUS_KM,
+    radius: Number.isFinite(radius) ? radius : defaultRadiusKm,
   };
 }
 
