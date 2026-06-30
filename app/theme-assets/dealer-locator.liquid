@@ -472,7 +472,7 @@
 <script>
   (() => {
     const root = document.currentScript.previousElementSibling;
-    const password = "TMG2026";
+    const password = {{ shop.metafields.custom.dealer_locator_password.value | default: "TMG2026" | json }};
     const form = root.querySelector("[data-dealer-form]");
     const input = root.querySelector("[data-dealer-password]");
     const login = root.querySelector("[data-dealer-login]");
@@ -1109,6 +1109,7 @@
               `<br>${getDealerRadius(point.radius)} km dealer radius` +
               `<br>Status: ${escapeHtml(point.status || "Unknown")}`
           )
+          .on("click", () => selectDealer(point))
       );
 
       allDealerCircles = dealerPoints.map((point) => {
