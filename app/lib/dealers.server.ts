@@ -98,9 +98,8 @@ export function refreshDealerCache(shop: string, admin: AdminApiContext) {
   const refresh = (async () => {
     const dealers = await fetchDealers(admin);
     const geocodes = await loadGeocodes(dealers);
-    const refreshedAt = new Date();
     const cached = applyCoordinates(dealers, geocodes);
-    const data = { dealers: JSON.stringify(cached), updatedAt: refreshedAt };
+    const data = { dealers: JSON.stringify(cached), updatedAt: new Date() };
 
     await prisma.dealerCache.upsert({
       where: { shop },
@@ -108,7 +107,7 @@ export function refreshDealerCache(shop: string, admin: AdminApiContext) {
       update: data,
     });
 
-    geocodeNewAddresses(shop, dealers, geocodes, refreshedAt).catch((error) =>
+    geocodeNewAddresses(shop, dealers, geocodes).catch((error) =>
       console.error(`[dealer-locator] Geocoding dealers for ${shop} failed`, error),
     );
     return cached;
@@ -299,14 +298,12 @@ function applyCoordinates(dealers: Dealer[], geocodes: Geocodes) {
   });
 }
 
+// Write coordinates into the saved dealers every few addresses, so the
+// storefront stops geocoding them itself as soon as possible.
+const GEOCODE_SAVE_EVERY = 10;
 const geocodingShops = new Set<string>();
 
-async function geocodeNewAddresses(
-  shop: string,
-  dealers: Dealer[],
-  geocodes: Geocodes,
-  refreshedAt: Date,
-) {
+async function geocodeNewAddresses(shop: string, dealers: Dealer[], geocodes: Geocodes) {
   const addresses = [...new Set(dealers.map((dealer) => dealer.address))].filter(
     (address) => {
       const saved = geocodes.get(address);
@@ -321,7 +318,7 @@ async function geocodeNewAddresses(
 
   geocodingShops.add(shop);
   try {
-    let changed = false;
+    let unsaved = 0;
     for (const [index, address] of addresses.entries()) {
       if (index > 0) await sleep(GEOCODE_SPACING_MS);
 
@@ -339,20 +336,32 @@ async function geocodeNewAddresses(
         create: { address, ...data },
         update: data,
       });
-      changed = true;
+
+      unsaved += 1;
+      if (unsaved >= GEOCODE_SAVE_EVERY) {
+        await applySavedCoordinates(shop);
+        unsaved = 0;
+      }
     }
 
-    if (!changed) return;
-
-    // Skip the update if a newer refresh has replaced the saved dealers since.
-    const updated = applyCoordinates(dealers, await loadGeocodes(dealers));
-    await prisma.dealerCache.updateMany({
-      where: { shop, updatedAt: refreshedAt },
-      data: { dealers: JSON.stringify(updated) },
-    });
+    if (unsaved) await applySavedCoordinates(shop);
   } finally {
     geocodingShops.delete(shop);
   }
+}
+
+// Adds the coordinates geocoded so far to the dealers currently saved for the
+// shop. Skipped if a refresh replaces them meanwhile, since it applies them too.
+async function applySavedCoordinates(shop: string) {
+  const row = await prisma.dealerCache.findUnique({ where: { shop } });
+  if (!row) return;
+
+  const dealers = JSON.parse(row.dealers) as Dealer[];
+  const updated = applyCoordinates(dealers, await loadGeocodes(dealers));
+  await prisma.dealerCache.updateMany({
+    where: { shop, updatedAt: row.updatedAt },
+    data: { dealers: JSON.stringify(updated) },
+  });
 }
 
 // Mirrors the storefront section's lookup: Geoapify first, then Nominatim,
