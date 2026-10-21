@@ -1,4 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
+import type { AdminApiContext } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 
 const FALLBACK_DEFAULT_RADIUS_KM = 50;
@@ -57,12 +58,32 @@ type ShopDefaultRadiusResponse = {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const shop = new URL(request.url).searchParams.get("shop");
+
   const { admin } = await authenticate.public.appProxy(request);
 
   if (!admin) {
+    console.warn(
+      `[dealer-locator] No offline session stored for ${shop}. Open the app in Shopify admin to create one.`,
+    );
     return json({ dealers: [], error: "No app proxy session was found." }, 401);
   }
 
+  try {
+    return await loadDealers(admin);
+  } catch (error) {
+    if (isUnauthorized(error)) {
+      console.error(
+        `[dealer-locator] Shopify rejected the stored access token for ${shop}. Open the app in Shopify admin to issue a new one.`,
+      );
+      return json({ dealers: [], error: "The app's access token was rejected." }, 401);
+    }
+    console.error(`[dealer-locator] Unable to load dealers for ${shop}`, error);
+    return json({ dealers: [], error: "Company locations could not be loaded." }, 500);
+  }
+};
+
+async function loadDealers(admin: AdminApiContext) {
   const defaultRadiusResponse = await admin.graphql(
     `#graphql
       query DealerLocatorDefaultRadius {
@@ -163,7 +184,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   return json({ dealers, error: "" });
-};
+}
+
+function isUnauthorized(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    (error as { response?: { code?: number } }).response?.code === 401
+  );
+}
 
 function normalizeDealer(node: CompanyLocationNode, defaultRadiusKm: number) {
   const address = node.shippingAddress || node.billingAddress;

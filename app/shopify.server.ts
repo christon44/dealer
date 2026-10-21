@@ -22,9 +22,9 @@ const shopify = shopifyApp({
       await installDealerLocatorTheme(admin);
     },
   },
-  future: {
-    expiringOfflineAccessTokens: true,
-  },
+  // No `expiringOfflineAccessTokens`: the storefront app proxy calls the Admin
+  // API with the stored offline token while nobody opens the app, so it must not
+  // depend on a refresh chain. Non-expiring tokens are allowed for custom apps.
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
