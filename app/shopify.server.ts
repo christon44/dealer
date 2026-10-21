@@ -18,8 +18,8 @@ const shopify = shopifyApp({
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
   hooks: {
-    afterAuth: async ({ admin }) => {
-      await installDealerLocatorTheme(admin);
+    afterAuth: async ({ admin, session }) => {
+      await installDealerLocatorTheme(admin, session.shop);
     },
   },
   // No `expiringOfflineAccessTokens`: the storefront app proxy calls the Admin

@@ -32,3 +32,28 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+// The storefront dealer list for a shop, saved as JSON so the dealer locator
+// page doesn't wait on Shopify. updatedAt is when it was last read from Shopify.
+model DealerCache {
+  shop      String   @id
+  dealers   String
+  updatedAt DateTime
+}
+
+// The dealer locator theme files last uploaded to a shop: which main theme they
+// went to, and a hash of this app build's copies, to re-upload when either changes.
+model ThemeInstall {
+  shop       String   @id
+  themeId    String
+  assetsHash String
+  updatedAt  DateTime @updatedAt
+}
+
+// Coordinates for a dealer address. lat/lng are null when no geocoder found it.
+model GeocodedAddress {
+  address   String   @id
+  lat       Float?
+  lng       Float?
+  updatedAt DateTime @updatedAt
+}

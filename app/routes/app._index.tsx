@@ -4,10 +4,18 @@ import type {
   HeadersFunction,
   LoaderFunctionArgs,
 } from "react-router";
-import { Form, useActionData, useLoaderData } from "react-router";
+import { Form, useActionData, useLoaderData, useNavigation } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-import { installDealerLocatorTheme } from "../lib/install-dealer-locator.server";
+import {
+  installDealerLocatorTheme,
+  syncDealerLocatorTheme,
+} from "../lib/install-dealer-locator.server";
+import {
+  getCachedDealers,
+  logRefreshError,
+  refreshDealerCache,
+} from "../lib/dealers.server";
 
 type Address = {
   address1: string | null;
@@ -65,6 +73,7 @@ type LoaderData = {
   password: string;
   defaultRadiusKm: number;
   showDeveloperSection: boolean;
+  dealerCache: { count: number; updatedAt: string } | null;
 };
 
 const DEALER_LOCATOR_PASSWORD_NAMESPACE = "custom";
@@ -76,7 +85,14 @@ const DEFAULT_RADIUS_KEY = "dealer_locator_default_radius";
 const FALLBACK_DEFAULT_RADIUS_KM = 50;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
+  syncDealerLocatorTheme(session.shop, admin).catch((error) =>
+    console.error(`[dealer-locator] Theme file check for ${session.shop} failed`, error),
+  );
+  const cached = await getCachedDealers(session.shop);
+  const dealerCache = cached
+    ? { count: cached.dealers.length, updatedAt: cached.updatedAt.toISOString() }
+    : null;
   const response = await admin.graphql(
     `#graphql
       query DealerCompanies {
@@ -138,6 +154,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       password: DEFAULT_DEALER_LOCATOR_PASSWORD,
       defaultRadiusKm: FALLBACK_DEFAULT_RADIUS_KM,
       showDeveloperSection,
+      dealerCache,
     };
   }
 
@@ -160,11 +177,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       DEFAULT_DEALER_LOCATOR_PASSWORD,
     defaultRadiusKm,
     showDeveloperSection,
+    dealerCache,
   };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const { admin, session } = await authenticate.admin(request);
   const formData = await request.formData();
   const intent = formData.get("intent");
 
@@ -257,14 +275,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { radiusError: userErrors.map((e) => e.message).join(" ") };
     }
 
+    // Dealers without their own radius use the default, so update the saved copy.
+    refreshDealerCache(session.shop, admin).catch((error) =>
+      logRefreshError(session.shop, error),
+    );
     return { radiusSaved: true };
+  }
+
+  if (intent === "refreshDealers") {
+    try {
+      const dealers = await refreshDealerCache(session.shop, admin);
+      return { dealersRefreshed: dealers.length };
+    } catch (error) {
+      logRefreshError(session.shop, error);
+      return { refreshError: "Dealers could not be refreshed from Shopify." };
+    }
   }
 
   if (process.env.NODE_ENV === "production") {
     return { resyncError: "Theme resync is disabled in production." };
   }
 
-  await installDealerLocatorTheme(admin);
+  await installDealerLocatorTheme(admin, session.shop);
   return { resynced: true };
 };
 
@@ -286,8 +318,14 @@ function useTimedVisibility(
 }
 
 export default function DealerMap() {
-  const { dealers, error, password, defaultRadiusKm, showDeveloperSection } =
-    useLoaderData() as LoaderData;
+  const {
+    dealers,
+    error,
+    password,
+    defaultRadiusKm,
+    showDeveloperSection,
+    dealerCache,
+  } = useLoaderData() as LoaderData;
   const actionData = useActionData() as
     | {
         resynced?: boolean;
@@ -296,8 +334,14 @@ export default function DealerMap() {
         passwordError?: string;
         radiusSaved?: boolean;
         radiusError?: string;
+        dealersRefreshed?: number;
+        refreshError?: string;
       }
     | undefined;
+  const navigation = useNavigation();
+  const isRefreshingDealers =
+    navigation.state !== "idle" &&
+    navigation.formData?.get("intent") === "refreshDealers";
   const [passwordInput, setPasswordInput] = useState(password);
   const [defaultRadiusInput, setDefaultRadiusInput] = useState(
     String(defaultRadiusKm),
@@ -309,6 +353,10 @@ export default function DealerMap() {
   );
   const showRadiusSaved = useTimedVisibility(
     Boolean(actionData?.radiusSaved),
+    actionData,
+  );
+  const showDealersRefreshed = useTimedVisibility(
+    actionData?.dealersRefreshed !== undefined,
     actionData,
   );
   const showResynced = useTimedVisibility(
@@ -344,6 +392,39 @@ export default function DealerMap() {
           <s-badge tone="info">{selectedLocationsCount} selected locations shown</s-badge>
           <s-badge tone="neutral">{dealers.length} total companies</s-badge>
         </s-stack>
+      </s-section>
+      <s-section heading="Storefront dealer data">
+        <s-paragraph>
+          The dealer locator page shows a saved copy of your dealers that is
+          refreshed from Shopify every 10 minutes. Refresh it to show changes
+          on the storefront right away.
+        </s-paragraph>
+        <s-paragraph>
+          {dealerCache ? (
+            <>
+              {dealerCache.count} dealers saved, last refreshed{" "}
+              <span suppressHydrationWarning>
+                {new Date(dealerCache.updatedAt).toLocaleString()}
+              </span>
+            </>
+          ) : (
+            "Nothing saved yet. It is saved on the first storefront visit or when you refresh."
+          )}
+        </s-paragraph>
+        <Form method="post">
+          <input type="hidden" name="intent" value="refreshDealers" />
+          <s-button type="submit" loading={isRefreshingDealers}>
+            Refresh now
+          </s-button>
+        </Form>
+        {showDealersRefreshed ? (
+          <div style={{ marginTop: "5px" }}>
+            <s-badge tone="success">Dealers refreshed</s-badge>
+          </div>
+        ) : null}
+        {actionData?.refreshError ? (
+          <s-paragraph>{actionData.refreshError}</s-paragraph>
+        ) : null}
       </s-section>
       <s-section heading="Storefront access">
         <s-paragraph>

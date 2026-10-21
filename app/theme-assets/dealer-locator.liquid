@@ -935,7 +935,12 @@
         const dealers = Array.isArray(data?.dealers) ? data.dealers : [];
         const points = await Promise.all(
           dealers.map(async (dealer) => {
-            const result = await geocodeAddress(dealer.address);
+            // The app saves coordinates for dealers it has geocoded; only
+            // addresses it hasn't reached yet are looked up here.
+            const result =
+              Number.isFinite(dealer.lat) && Number.isFinite(dealer.lng)
+                ? { lat: dealer.lat, lng: dealer.lng }
+                : await geocodeAddress(dealer.address);
 
             if (!result) return null;
 
